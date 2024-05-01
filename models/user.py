@@ -1,12 +1,11 @@
 #!/usr/bin/python3
-""" holds class User"""
+"""This  holds class User class"""
 import models
 from models.base_model import BaseModel, Base
 from os import getenv
 import sqlalchemy
 from sqlalchemy import Column, String
 from sqlalchemy.orm import relationship
-
 
 class User(BaseModel, Base):
     """Representation of a user """
@@ -20,7 +19,11 @@ class User(BaseModel, Base):
     places = relationship("Place", backref="user", cascade="all, delete-orphan") if models.storage_t == 'db' else []
     reviews = relationship("Review", backref="user", cascade="all, delete-orphan") if models.storage_t == 'db' else []
 
+
     def __init__(self, *args, **kwargs):
-        """initializes user"""
+    """Initializes user"""
+    if kwargs:
         super().__init__(*args, **kwargs)
+    else:
+        super().__init__()
 
