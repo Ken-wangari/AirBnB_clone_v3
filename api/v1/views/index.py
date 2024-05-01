@@ -1,27 +1,21 @@
-#!/usr/bin/env python3
-
-from flask import Flask, jsonify
+#!/usr/bin/python3xx
+'''api status'''
+import models
 from models import storage
 from models.base_model import State, User, Amenity, City, Place, Review
+from flask import jsonify
+from api.v1.views import app_views
 
-app = Flask(__name__)
-
-
-@app.route('/api/v1/status', methods=['GET'])
-def get_status():
+@app_views.route('/status', methods=['GET'], strict_slashes=False)
+def return_status():
+    '''return API status'''
     return jsonify(status='OK')
 
-
-@app.route('/api/v1/stats', methods=['GET'])
-def get_stats():
+@app_views.route('/stats', methods=['GET'], strict_slashes=False)
+def return_stats():
+    '''return JSON statistics'''
     models = {'states': State, 'users': User, 'amenities': Amenity,
               'cities': City, 'places': Place, 'reviews': Review}
-
     stats = {key: storage.count(value) for key, value in models.items()}
-
     return jsonify(stats)
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
 
