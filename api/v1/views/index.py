@@ -1,48 +1,30 @@
 #!/usr/bin/python3
-"""
-This module implements a Flask web application for an AirBnB clone RESTful API
-"""
-from flask import Flask, jsonify
-import models
+"""Implementation of a rule that returns the status of the application"""
+from flask import jsonify
 from api.v1.views import app_views
+from models import storage
+from models.amenity import Amenity
+from models.city import City
+from models.place import Place
+from models.review import Review
+from models.state import State
+from models.user import User
 
-app = Flask(__name__)
-
-
-@app_views.route("/status", methods=['GET'], strict_slashes=False)
-def view_status():
-    """Returns the status of the application"""
+@app_views.route("/status", methods=["GET"], strict_slashes=False)
+def get_status():
+    """Returns the status of the API"""
     return jsonify({"status": "OK"})
 
-
-@app_views.route("/stats", methods=['GET'], strict_slashes=False)
-def view_stats():
-    """Retrieves the number of each object by type"""
-    model_counts = {
-        "amenities": models.storage.count(models.Amenity),
-        "cities": models.storage.count(models.City),
-        "places": models.storage.count(models.Place),
-        "reviews": models.storage.count(models.Review),
-        "states": models.storage.count(models.State),
-        "users": models.storage.count(models.User)
+@app_views.route("/stats", methods=["GET"], strict_slashes=False)
+def get_stats():
+    """Returns the number of each object type"""
+    stats = {
+        "amenities": storage.count(Amenity),
+        "cities": storage.count(City),
+        "places": storage.count(Place),
+        "reviews": storage.count(Review),
+        "states": storage.count(State),
+        "users": storage.count(User)
     }
-    return jsonify(model_counts)
-
-
-@app.teardown_appcontext
-def teardown_appcontext(exception):
-    """Closes the current SQLAlchemy Session"""
-    models.storage.close()
-
-
-@app.errorhandler(404)
-def handle_404_error(error):
-    """Handles 404 errors"""
-    return jsonify({"error": "Not found"}), 404
-
-
-if __name__ == '__main__':
-    host = "0.0.0.0"
-    port = 5000
-    app.run(host=host, port=port, threaded=True)
+    return jsonify(stats)
 
