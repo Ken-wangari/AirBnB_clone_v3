@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """
-This script starts a Flask web application
+    This script starts a Flask web application
 """
 from os import getenv
 from flask import Flask, jsonify
@@ -16,13 +16,13 @@ CORS(app, resources={r"/api/v1/*": {"origins": "0.0.0.0"}})
 
 
 @app.teardown_appcontext
-def teardown(exception):
+def teardown(self):
     """Removes the current SQLAlchemy Session"""
     storage.close()
 
 
 @app.errorhandler(404)
-def page_not_found(error):
+def error(e):
     """Handler for 404 errors"""
     return jsonify({"error": "Not found"}), 404
 
