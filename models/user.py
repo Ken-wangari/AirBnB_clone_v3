@@ -10,20 +10,17 @@ from sqlalchemy.orm import relationship
 
 class User(BaseModel, Base):
     """Representation of a user """
-    if models.storage_t == 'db':
-        __tablename__ = 'users'
-        email = Column(String(128), nullable=False)
-        password = Column(String(128), nullable=False)
-        first_name = Column(String(128), nullable=True)
-        last_name = Column(String(128), nullable=True)
-        places = relationship("Place", backref="user")
-        reviews = relationship("Review", backref="user")
-    else:
-        email = ""
-        password = ""
-        first_name = ""
-        last_name = ""
+    __tablename__ = 'users' if models.storage_t == 'db' else None
+
+    email = Column(String(128), nullable=False) if models.storage_t == 'db' else ""
+    password = Column(String(128), nullable=False) if models.storage_t == 'db' else ""
+    first_name = Column(String(128), nullable=True) if models.storage_t == 'db' else ""
+    last_name = Column(String(128), nullable=True) if models.storage_t == 'db' else ""
+
+    places = relationship("Place", backref="user", cascade="all, delete-orphan") if models.storage_t == 'db' else []
+    reviews = relationship("Review", backref="user", cascade="all, delete-orphan") if models.storage_t == 'db' else []
 
     def __init__(self, *args, **kwargs):
         """initializes user"""
         super().__init__(*args, **kwargs)
+
