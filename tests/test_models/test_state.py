@@ -11,7 +11,6 @@ from models.base_model import BaseModel
 import pep8
 import unittest
 
-# Alias for better readability
 State = state.State
 
 
@@ -21,104 +20,88 @@ class TestStateDocs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up for the doc tests"""
-        cls.state_methods = inspect.getmembers(State, inspect.isfunction)
+        cls.state_functions = inspect.getmembers(State, inspect.isfunction)
 
     def test_pep8_conformance_state(self):
         """Test that models/state.py conforms to PEP8."""
-        style = pep8.StyleGuide(quiet=True)
-        result = style.check_files(['models/state.py'])
-        self.assertEqual(
-            result.total_errors, 0,
-            "Found code style errors (and warnings) in models/state.py"
-        )
+        pep8style = pep8.StyleGuide(quiet=True)
+        result = pep8style.check_files(['models/state.py'])
+        self.assertEqual(result.total_errors, 0,
+                         "Found code style errors (and warnings).")
 
     def test_pep8_conformance_test_state(self):
         """Test that tests/test_models/test_state.py conforms to PEP8."""
-        style = pep8.StyleGuide(quiet=True)
-        result = style.check_files(['tests/test_models/test_state.py'])
-        self.assertEqual(
-            result.total_errors, 0,
-            "Found code style errors (and warnings) in tests/test_models/test_state.py"
-        )
+        pep8style = pep8.StyleGuide(quiet=True)
+        result = pep8style.check_files(['tests/test_models/test_state.py'])
+        self.assertEqual(result.total_errors, 0,
+                         "Found code style errors (and warnings).")
 
     def test_state_module_docstring(self):
         """Test for the state.py module docstring"""
-        self.assertIsNotNone(state.__doc__, "state.py needs a docstring")
-        self.assertTrue(len(state.__doc__) >= 1, "state.py needs a docstring")
+        self.assertIsNot(state.__doc__, None,
+                         "state.py needs a docstring")
+        self.assertTrue(len(state.__doc__) >= 1,
+                        "state.py needs a docstring")
 
     def test_state_class_docstring(self):
         """Test for the State class docstring"""
-        self.assertIsNotNone(State.__doc__, "State class needs a docstring")
-        self.assertTrue(len(State.__doc__) >= 1, "State class needs a docstring")
+        self.assertIsNot(State.__doc__, None,
+                         "State class needs a docstring")
+        self.assertTrue(len(State.__doc__) >= 1,
+                        "State class needs a docstring")
 
-    def test_state_method_docstrings(self):
+    def test_state_func_docstrings(self):
         """Test for the presence of docstrings in State methods"""
-        for method_name, method_obj in self.state_methods:
-            with self.subTest(method_name=method_name):
-                self.assertIsNotNone(
-                    method_obj.__doc__,
-                    f"{method_name} method needs a docstring"
-                )
-                self.assertTrue(
-                    len(method_obj.__doc__) >= 1,
-                    f"{method_name} method needs a docstring"
-                )
+        for name, func in self.state_functions:
+            with self.subTest(name=name):
+                self.assertIsNotNone(func.__doc__,
+                                     f"{name} method needs a docstring")
+                self.assertTrue(len(func.__doc__) >= 1,
+                                f"{name} method needs a docstring")
 
 
 class TestState(unittest.TestCase):
     """Test the State class"""
 
+    def setUp(self):
+        """Set up an instance of State for testing"""
+        self.state = State()
+
     def test_is_subclass(self):
         """Test that State is a subclass of BaseModel"""
-        state_instance = State()
-        self.assertIsInstance(state_instance, BaseModel)
-        self.assertTrue(hasattr(state_instance, "id"))
-        self.assertTrue(hasattr(state_instance, "created_at"))
-        self.assertTrue(hasattr(state_instance, "updated_at"))
+        self.assertIsInstance(self.state, BaseModel)
+        self.assertTrue(hasattr(self.state, "id"))
+        self.assertTrue(hasattr(self.state, "created_at"))
+        self.assertTrue(hasattr(self.state, "updated_at"))
 
     def test_name_attr(self):
         """Test that State has attribute name, and it's an empty string"""
-        state_instance = State()
-        self.assertTrue(hasattr(state_instance, "name"))
-        if models.storage_t == 'db':
-            self.assertIsNone(state_instance.name)
-        else:
-            self.assertEqual(state_instance.name, "")
+        self.assertTrue(hasattr(self.state, "name"))
+        self.assertEqual(self.state.name, "")
 
     def test_to_dict_creates_dict(self):
-        """Test if to_dict method creates a dictionary with proper attrs"""
-        state_instance = State()
-        new_dict = state_instance.to_dict()
-        self.assertEqual(type(new_dict), dict)
+        """Test to_dict method creates a dictionary with proper attrs"""
+        new_dict = self.state.to_dict()
+        self.assertIsInstance(new_dict, dict)
         self.assertNotIn("_sa_instance_state", new_dict)
-        for attr in state_instance.__dict__:
-            with self.subTest(attr=attr):
-                if attr != "_sa_instance_state":
-                    self.assertIn(attr, new_dict)
+        for attr, value in self.state.__dict__.items():
+            if attr != "_sa_instance_state":
+                self.assertIn(attr, new_dict)
+                self.assertEqual(value, new_dict[attr])
         self.assertIn("__class__", new_dict)
 
     def test_to_dict_values(self):
-        """Test if values in dictionary returned from to_dict are correct"""
-        time_format = "%Y-%m-%dT%H:%M:%S.%f"
-        state_instance = State()
-        new_dict = state_instance.to_dict()
+        """Test that values in dict returned from to_dict are correct"""
+        t_format = "%Y-%m-%dT%H:%M:%S.%f"
+        new_dict = self.state.to_dict()
         self.assertEqual(new_dict["__class__"], "State")
         self.assertEqual(type(new_dict["created_at"]), str)
         self.assertEqual(type(new_dict["updated_at"]), str)
-        self.assertEqual(
-            new_dict["created_at"], state_instance.created_at.strftime(time_format)
-        )
-        self.assertEqual(
-            new_dict["updated_at"], state_instance.updated_at.strftime(time_format)
-        )
+        self.assertEqual(new_dict["created_at"], self.state.created_at.strftime(t_format))
+        self.assertEqual(new_dict["updated_at"], self.state.updated_at.strftime(t_format))
 
     def test_str(self):
-        """Test if the str method has the correct output"""
-        state_instance = State()
-        string = "[State] ({}) {}".format(state_instance.id, state_instance.__dict__)
-        self.assertEqual(string, str(state_instance))
-
-
-if __name__ == "__main__":
-    unittest.main()
+        """Test that the str method has the correct output"""
+        string = "[State] ({}) {}".format(self.state.id, self.state.__dict__)
+        self.assertEqual(string, str(self.state))
 

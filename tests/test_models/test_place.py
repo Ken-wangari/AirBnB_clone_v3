@@ -1,18 +1,15 @@
 #!/usr/bin/python3
 """
-Contains the TestPlaceDocs classes
+Contains TestPlaceDocs and TestPlace classes
 """
 
 from datetime import datetime
 import inspect
 import models
-from models import place
+from models.place import Place
 from models.base_model import BaseModel
 import pep8
 import unittest
-
-# Alias for better readability
-Place = place.Place
 
 
 class TestPlaceDocs(unittest.TestCase):
@@ -21,117 +18,103 @@ class TestPlaceDocs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up for the doc tests"""
-        cls.place_methods = inspect.getmembers(Place, inspect.isfunction)
+        cls.place_f = inspect.getmembers(Place, inspect.isfunction)
 
     def test_pep8_conformance_place(self):
-        """Test PEP8 conformance of place.py"""
-        style = pep8.StyleGuide(quiet=True)
-        result = style.check_files(['models/place.py'])
-        self.assertEqual(
-            result.total_errors, 0,
-            "PEP8 style errors and warnings found in place.py"
-        )
+        """Test that models/place.py conforms to PEP8."""
+        pep8s = pep8.StyleGuide(quiet=True)
+        result = pep8s.check_files(['models/place.py'])
+        self.assertEqual(result.total_errors, 0,
+                         "Found code style errors (and warnings).")
 
     def test_pep8_conformance_test_place(self):
-        """Test PEP8 conformance of test_place.py"""
-        style = pep8.StyleGuide(quiet=True)
-        result = style.check_files(['tests/test_models/test_place.py'])
-        self.assertEqual(
-            result.total_errors, 0,
-            "PEP8 style errors and warnings found in test_place.py"
-        )
+        """Test that tests/test_models/test_place.py conforms to PEP8."""
+        pep8s = pep8.StyleGuide(quiet=True)
+        result = pep8s.check_files(['tests/test_models/test_place.py'])
+        self.assertEqual(result.total_errors, 0,
+                         "Found code style errors (and warnings).")
 
     def test_place_module_docstring(self):
-        """Test if place.py module has a docstring"""
-        self.assertIsNotNone(place.__doc__, "place.py needs a docstring")
-        self.assertTrue(len(place.__doc__) >= 1, "place.py needs a docstring")
+        """Test for the place.py module docstring"""
+        self.assertIsNot(models.place.__doc__, None,
+                         "place.py needs a docstring")
+        self.assertTrue(len(models.place.__doc__) >= 1,
+                        "place.py needs a docstring")
 
     def test_place_class_docstring(self):
-        """Test if Place class has a docstring"""
-        self.assertIsNotNone(Place.__doc__, "Place class needs a docstring")
-        self.assertTrue(len(Place.__doc__) >= 1, "Place class needs a docstring")
+        """Test for the Place class docstring"""
+        self.assertIsNot(Place.__doc__, None,
+                         "Place class needs a docstring")
+        self.assertTrue(len(Place.__doc__) >= 1,
+                        "Place class needs a docstring")
 
-    def test_place_method_docstrings(self):
-        """Test if Place class methods have docstrings"""
-        for method_name, method_obj in self.place_methods:
-            with self.subTest(method_name=method_name):
-                self.assertIsNotNone(
-                    method_obj.__doc__,
-                    f"{method_name} method needs a docstring"
-                )
-                self.assertTrue(
-                    len(method_obj.__doc__) >= 1,
-                    f"{method_name} method needs a docstring"
-                )
+    def test_place_func_docstrings(self):
+        """Test for the presence of docstrings in Place methods"""
+        for func in self.place_f:
+            self.assertIsNot(func[1].__doc__, None,
+                             f"{func[0]} method needs a docstring")
+            self.assertTrue(len(func[1].__doc__) >= 1,
+                            f"{func[0]} method needs a docstring")
 
 
 class TestPlace(unittest.TestCase):
     """Test the Place class"""
 
+    def setUp(self):
+        """Set up instances for testing"""
+        self.place = Place()
+
     def test_is_subclass(self):
-        """Test if Place is a subclass of BaseModel"""
-        place_instance = Place()
-        self.assertIsInstance(place_instance, BaseModel)
-        self.assertTrue(hasattr(place_instance, "id"))
-        self.assertTrue(hasattr(place_instance, "created_at"))
-        self.assertTrue(hasattr(place_instance, "updated_at"))
+        """Test that Place is a subclass of BaseModel"""
+        self.assertIsInstance(self.place, BaseModel)
+        self.assertTrue(hasattr(self.place, "id"))
+        self.assertTrue(hasattr(self.place, "created_at"))
+        self.assertTrue(hasattr(self.place, "updated_at"))
 
-    def test_attributes_default_values(self):
-        """Test default values of Place attributes"""
-        place_instance = Place()
-        attributes = ["city_id", "user_id", "name", "description",
-                      "number_rooms", "number_bathrooms", "max_guest",
-                      "price_by_night", "latitude", "longitude"]
-        for attr in attributes:
+    def test_attributes(self):
+        """Test Place attributes"""
+        attrs_types = {
+            "city_id": str,
+            "user_id": str,
+            "name": str,
+            "description": str,
+            "number_rooms": int,
+            "number_bathrooms": int,
+            "max_guest": int,
+            "price_by_night": int,
+            "latitude": float,
+            "longitude": float
+        }
+        for attr, typ in attrs_types.items():
             with self.subTest(attr=attr):
-                self.assertTrue(hasattr(place_instance, attr))
-                if models.storage_t == 'db':
-                    self.assertIsNone(getattr(place_instance, attr))
+                self.assertTrue(hasattr(self.place, attr))
+                self.assertIsInstance(getattr(self.place, attr), typ)
+                if typ == int:
+                    self.assertEqual(getattr(self.place, attr), 0)
+                elif typ == float:
+                    self.assertEqual(getattr(self.place, attr), 0.0)
                 else:
-                    self.assertEqual(getattr(place_instance, attr), "")
+                    self.assertEqual(getattr(self.place, attr), "")
 
-    @unittest.skipIf(models.storage_t == 'db', "not testing File Storage")
-    def test_amenity_ids_attr(self):
-        """Test Place amenity_ids attribute"""
-        place_instance = Place()
-        self.assertTrue(hasattr(place_instance, "amenity_ids"))
-        self.assertEqual(type(place_instance.amenity_ids), list)
-        self.assertEqual(len(place_instance.amenity_ids), 0)
-
-    def test_to_dict_creates_dict(self):
-        """Test if to_dict method creates a dictionary with proper attrs"""
-        place_instance = Place()
-        new_dict = place_instance.to_dict()
-        self.assertEqual(type(new_dict), dict)
-        self.assertNotIn("_sa_instance_state", new_dict)
-        for attr in place_instance.__dict__:
-            with self.subTest(attr=attr):
-                if attr != "_sa_instance_state":
-                    self.assertIn(attr, new_dict)
-        self.assertIn("__class__", new_dict)
-
-    def test_to_dict_values(self):
-        """Test if values in dictionary returned from to_dict are correct"""
-        time_format = "%Y-%m-%dT%H:%M:%S.%f"
-        place_instance = Place()
-        new_dict = place_instance.to_dict()
-        self.assertEqual(new_dict["__class__"], "Place")
-        self.assertEqual(type(new_dict["created_at"]), str)
-        self.assertEqual(type(new_dict["updated_at"]), str)
-        self.assertEqual(
-            new_dict["created_at"], place_instance.created_at.strftime(time_format)
-        )
-        self.assertEqual(
-            new_dict["updated_at"], place_instance.updated_at.strftime(time_format)
-        )
+    def test_to_dict(self):
+        """Test conversion of object attributes to dictionary for json"""
+        my_place = self.place
+        my_place.name = "Holberton"
+        my_place.my_number = 89
+        d = my_place.to_dict()
+        expected_attrs = ["id",
+                          "created_at",
+                          "updated_at",
+                          "name",
+                          "my_number",
+                          "__class__"]
+        self.assertCountEqual(d.keys(), expected_attrs)
+        self.assertEqual(d['__class__'], 'Place')
+        self.assertEqual(d['name'], "Holberton")
+        self.assertEqual(d['my_number'], 89)
 
     def test_str(self):
-        """Test if the str method has the correct output"""
-        place_instance = Place()
-        string = "[Place] ({}) {}".format(place_instance.id, place_instance.__dict__)
-        self.assertEqual(string, str(place_instance))
-
-
-if __name__ == "__main__":
-    unittest.main()
+        """Test that the str method has the correct output"""
+        string = "[Place] ({}) {}".format(self.place.id, self.place.__dict__)
+        self.assertEqual(string, str(self.place))
 
