@@ -1,6 +1,5 @@
 #!/usr/bin/python3
-"""Create a new view for Amenity objects that handles
-all default RESTFul API actions"""
+"""Create a new view for Amenity objects"""
 from flask import jsonify, abort, request
 from flasgger.utils import swag_from
 from models import storage
