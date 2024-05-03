@@ -83,8 +83,6 @@ class HBNBCommand(cmd.Cmd):
             setattr(obj, items[2], value)
             obj.save()
 
-    # Check functions
-
     @staticmethod
     def check_input(items, step=0):
         """
