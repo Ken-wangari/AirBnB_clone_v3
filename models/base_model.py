@@ -1,75 +1,53 @@
 #!/usr/bin/python3
-"""
-Contains class BaseModel
-"""
+
+"""Module for the BaseModel class and utilities"""
 
 from datetime import datetime
-import models
-from os import getenv
-import sqlalchemy
-from sqlalchemy import Column, String, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-import uuid
-
-time = "%Y-%m-%dT%H:%M:%S.%f"
-
-if models.storage_t == "db":
-    Base = declarative_base()
-else:
-    Base = object
+from models import storage
+from uuid import uuid4 as uuid
 
 
 class BaseModel:
-    """The BaseModel class from which future classes will be derived"""
-    if models.storage_t == "db":
-        id = Column(String(60), primary_key=True)
-        created_at = Column(DateTime, default=datetime.utcnow)
-        updated_at = Column(DateTime, default=datetime.utcnow)
+    """BaseModel class to serve as the foundation for other models"""
 
     def __init__(self, *args, **kwargs):
-        """Initialization of the base model"""
+        """Initialize a BaseModel instance"""
         if kwargs:
-            for key, value in kwargs.items():
-                if key != "__class__":
-                    setattr(self, key, value)
-            if kwargs.get("created_at", None) and type(self.created_at) is str:
-                self.created_at = datetime.strptime(kwargs["created_at"], time)
-            else:
-                self.created_at = datetime.utcnow()
-            if kwargs.get("updated_at", None) and type(self.updated_at) is str:
-                self.updated_at = datetime.strptime(kwargs["updated_at"], time)
-            else:
-                self.updated_at = datetime.utcnow()
-            if kwargs.get("id", None) is None:
-                self.id = str(uuid.uuid4())
+            self.set_by_kwargs(**kwargs)
         else:
-            self.id = str(uuid.uuid4())
-            self.created_at = datetime.utcnow()
-            self.updated_at = self.created_at
+            self.id = str(uuid())
+            self.created_at = datetime.now()
+            self.updated_at = datetime.now()
+            storage.new(self)
 
-    def __str__(self):
-        """String representation of the BaseModel class"""
-        return "[{:s}] ({:s}) {}".format(self.__class__.__name__, self.id,
-                                         self.__dict__)
+    @staticmethod
+    def isoparse(isoformat):
+        """Parse a date from ISO format to datetime object"""
+        return datetime.strptime(isoformat, "%Y-%m-%dT%H:%M:%S.%f")
+
+    def set_by_kwargs(self, **kwargs):
+        """Set properties by kwargs to a BaseModel instance"""
+        for k, v in kwargs.items():
+            if k == 'created_at' or k == 'updated_at':
+                setattr(self, k, self.isoparse(v))
+            elif k != '__class__':
+                setattr(self, k, v)
 
     def save(self):
-        """updates the attribute 'updated_at' with the current datetime"""
-        self.updated_at = datetime.utcnow()
-        models.storage.new(self)
-        models.storage.save()
+        """Save changes of a BaseModel instance and update JSON file"""
+        self.updated_at = datetime.now()
+        storage.save()
 
     def to_dict(self):
-        """returns a dictionary containing all keys/values of the instance"""
-        new_dict = self.__dict__.copy()
-        if "created_at" in new_dict:
-            new_dict["created_at"] = new_dict["created_at"].strftime(time)
-        if "updated_at" in new_dict:
-            new_dict["updated_at"] = new_dict["updated_at"].strftime(time)
-        new_dict["__class__"] = self.__class__.__name__
-        if "_sa_instance_state" in new_dict:
-            del new_dict["_sa_instance_state"]
-        return new_dict
+        """Return all info of a BaseModel instance as a dictionary"""
+        return {
+            **self.__dict__,
+            '__class__': self.__class__.__name__,
+            'updated_at': self.updated_at.isoformat(),
+            'created_at': self.created_at.isoformat()
+        }
 
-    def delete(self):
-        """delete the current instance from the storage"""
-        models.storage.delete(self)
+    def __str__(self):
+        """Print info of a BaseModel instance"""
+        return f"[{self.__class__.__name__}] ({self.id}) {self.__dict__}"
+

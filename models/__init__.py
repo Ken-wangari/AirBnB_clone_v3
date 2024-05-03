@@ -1,17 +1,14 @@
 #!/usr/bin/python3
-"""
-initialize the models package
-"""
 
-from os import getenv
+"""Initialize the FileStorage instance and load data from JSON files"""
 
+from models.engine.file_storage import FileStorage
 
-storage_t = getenv("HBNB_TYPE_STORAGE")
-
-if storage_t == "db":
-    from models.engine.db_storage import DBStorage
-    storage = DBStorage()
-else:
-    from models.engine.file_storage import FileStorage
+def main():
+    """Main function to initialize FileStorage and load data"""
     storage = FileStorage()
-storage.reload()
+    storage.reload()
+
+if __name__ == "__main__":
+    main()
+

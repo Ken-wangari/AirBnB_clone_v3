@@ -1,9 +1,7 @@
 #!/usr/bin/python3
-"""
-Contains the FileStorage class
-"""
-
+""" Module to handle JSON file """
 import json
+from os.path import isfile
 from models.amenity import Amenity
 from models.base_model import BaseModel
 from models.city import City
@@ -12,76 +10,77 @@ from models.review import Review
 from models.state import State
 from models.user import User
 
-classes = {"Amenity": Amenity, "BaseModel": BaseModel, "City": City,
-           "Place": Place, "Review": Review, "State": State, "User": User}
-
 
 class FileStorage:
-    """serializes instances to a JSON file & deserializes back to instances"""
+    """Class to handle JSON file storage."""
 
     __file_path = "file.json"
     __objects = {}
 
-    def all(self, cls=None):
-        """returns the dictionary __objects"""
-        if not cls:
-            return self.__objects
-        elif type(cls) == str:
-            return {k: v for k, v in self.__objects.items()
-                    if v.__class__.__name__ == cls}
-        else:
-            return {k: v for k, v in self.__objects.items()
-                    if v.__class__ == cls}
+    @staticmethod
+    def constants():
+        """Return a list of constant values."""
+        return ['id', 'created_at', 'updated_at']
+
+    def all(self):
+        """Return the dictionary '__objects'."""
+        return self.__class__.__objects
 
     def new(self, obj):
-        """sets in __objects the obj with key <obj class name>.id"""
-        if obj is not None:
-            key = obj.__class__.__name__ + "." + obj.id
-            self.__objects[key] = obj
+        """Add a BaseModel instance to '__objects'."""
+        key = "{}.{}".format(obj.__class__.__name__, obj.id)
+        self.__class__.__objects[key] = obj
 
     def save(self):
-        """serializes __objects to the JSON file (path: __file_path)"""
-        json_objects = {}
-        for key in self.__objects:
-            json_objects[key] = self.__objects[key].to_dict()
-        with open(self.__file_path, 'w') as f:
-            json.dump(json_objects, f)
+        """Serialize '__objects' to the JSON file."""
+        with open(self.__class__.__file_path, 'w', encoding='utf-8') as f:
+            json.dump({k: v.to_dict() for k, v in self.__class__.__objects.items()}, f)
+
+    def delete(self, class_name, obj_id):
+        """Delete a BaseModel instance from '__objects' by id."""
+        key = "{}.{}".format(class_name, obj_id)
+        if key in self.__class__.__objects:
+            del self.__class__.__objects[key]
 
     def reload(self):
-        """deserializes the JSON file to __objects"""
+        """Read the JSON file, create respective BaseModel instances, and store each one in '__objects'."""
+        if not isfile(self.__class__.__file_path):
+            return
+
+        with open(self.__class__.__file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            for k, v in data.items():
+                obj = self.create_obj(v['__class__'], v)
+                key = "{}.{}".format(obj.__class__.__name__, obj.id)
+                self.__class__.__objects[key] = obj
+
+    @staticmethod
+    def create_obj(class_name, values=None):
+        """Create an instance of a class dynamically."""
+        classes = {
+            'BaseModel': BaseModel,
+            'User': User,
+            'State': State,
+            'City': City,
+            'Amenity': Amenity,
+            'Place': Place,
+            'Review': Review
+        }
+        cls = classes.get(class_name)
+        if cls and values:
+            return cls(**values)
+        return None
+
+    @staticmethod
+    def auto_cast(value):
+        """Cast a given input to int, float, or str."""
         try:
-            with open(self.__file_path, 'r') as f:
-                jo = json.load(f)
-            for key in jo:
-                self.__objects[key] = classes[jo[key]["__class__"]](**jo[key])
-        except:
+            return int(value)
+        except ValueError:
             pass
 
-    def delete(self, obj=None):
-        """delete obj from __objects if it’s inside"""
-        if obj is not None:
-            del self.__objects[obj.__class__.__name__ + '.' + obj.id]
-            self.save()
+        try:
+            return float(value)
+        except ValueError:
+            return str(value)
 
-    def close(self):
-        """Deserialize JSON file to objects"""
-        self.reload()
-
-    def get(self, cls, id):
-        """Retrieve an object"""
-        if cls is not None and type(cls) is str and id is not None and\
-           type(id) is str and cls in classes:
-            key = cls + '.' + id
-            obj = self.__objects.get(key, None)
-            return (obj)
-        else:
-            return(None)
-
-    def count(self, cls=None):
-        """Count number of objects in storage"""
-        total = 0
-        if type(cls) == str and cls in classes:
-            total = len(self.all(cls))
-        elif cls is None:
-            total = len(self.__objects)
-        return total
