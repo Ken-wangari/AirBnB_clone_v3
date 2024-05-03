@@ -8,7 +8,6 @@ import inspect
 import models
 import pep8
 import unittest
-
 from models import review
 from models.base_model import BaseModel
 
