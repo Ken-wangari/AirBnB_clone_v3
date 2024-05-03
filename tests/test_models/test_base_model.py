@@ -1,7 +1,5 @@
 #!/usr/bin/python3
-"""
-Contains the TestBaseModelDocs and TestBaseModel classes for testing the BaseModel class.
-"""
+"""Test BaseModel for expected behavior and documentation"""
 from datetime import datetime
 import inspect
 import models
