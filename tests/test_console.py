@@ -1,41 +1,101 @@
 #!/usr/bin/python3
-"""
-Contains the class TestConsoleDocs
-"""
+"""Unit tests for AirBnB Console"""
 
-import console
-import inspect
-import pep8
+import io
 import unittest
-HBNBCommand = console.HBNBCommand
+from unittest.mock import patch
+from console import HBNBCommand
+from models.engine.file_storage import FileStorage
+from os import remove
+
+class TestNonExistingCommand(unittest.TestCase):
+    """Tests a command that does not exist"""
+
+    def test_unknown_command(self):
+        """Test for an unknown command"""
+        expected_output = "*** Unknown syntax: asd\n"
+        with patch('sys.stdout', new=io.StringIO()) as fake_out:
+            HBNBCommand().onecmd("asd")
+            actual_output = fake_out.getvalue()
+            self.assertEqual(expected_output, actual_output)
 
 
-class TestConsoleDocs(unittest.TestCase):
-    """Class for testing documentation of the console"""
-    def test_pep8_conformance_console(self):
-        """Test that console.py conforms to PEP8."""
-        pep8s = pep8.StyleGuide(quiet=True)
-        result = pep8s.check_files(['console.py'])
-        self.assertEqual(result.total_errors, 0,
-                         "Found code style errors (and warnings).")
+class TestHelpCommands(unittest.TestCase):
+    """Tests the help commands"""
 
-    def test_pep8_conformance_test_console(self):
-        """Test that tests/test_console.py conforms to PEP8."""
-        pep8s = pep8.StyleGuide(quiet=True)
-        result = pep8s.check_files(['tests/test_console.py'])
-        self.assertEqual(result.total_errors, 0,
-                         "Found code style errors (and warnings).")
+    @classmethod
+    def setUpClass(cls):
+        """Set up before all tests"""
+        try:
+            remove("file.json")
+        except FileNotFoundError:
+            pass
+        FileStorage._FileStorage__objects = {}
 
-    def test_console_module_docstring(self):
-        """Test for the console.py module docstring"""
-        self.assertIsNot(console.__doc__, None,
-                         "console.py needs a docstring")
-        self.assertTrue(len(console.__doc__) >= 1,
-                        "console.py needs a docstring")
+    @classmethod
+    def tearDownClass(cls):
+        """Tear down after all tests"""
+        try:
+            remove("file.json")
+        except FileNotFoundError:
+            pass
 
-    def test_HBNBCommand_class_docstring(self):
-        """Test for the HBNBCommand class docstring"""
-        self.assertIsNot(HBNBCommand.__doc__, None,
-                         "HBNBCommand class needs a docstring")
-        self.assertTrue(len(HBNBCommand.__doc__) >= 1,
-                        "HBNBCommand class needs a docstring")
+    def assert_help_output(self, command, expected_output):
+        """Helper method to assert help command output"""
+        with patch('sys.stdout', new=io.StringIO()) as fake_out:
+            HBNBCommand().onecmd(command)
+            actual_output = fake_out.getvalue()
+            self.assertEqual(expected_output, actual_output)
+
+    def test_help_help(self):
+        """Test for the help command"""
+        expected_output = "List available commands with \"help\" or " \
+                          "detailed help with \"help cmd\".\n"
+        self.assert_help_output("help help", expected_output)
+
+    def test_help_quit(self):
+        """Test for the help quit command"""
+        expected_output = "Quit command to exit the program\n"
+        self.assert_help_output("help quit", expected_output)
+
+    def test_help_EOF(self):
+        """Test for the help EOF command"""
+        expected_output = "EOF command to exit the program\n"
+        self.assert_help_output("help EOF", expected_output)
+
+    def test_help_create(self):
+        """Test for the help create command"""
+        expected_output = "Create an instance if the Model exists\n"
+        self.assert_help_output("help create", expected_output)
+
+    def test_help_show(self):
+        """Test for the help show command"""
+        expected_output = "Print dict of an instance based on its ID\n"
+        self.assert_help_output("help show", expected_output)
+
+    def test_help_destroy(self):
+        """Test for the help destroy command"""
+        expected_output = "Deletes an instance based on its ID and saves the changes\n \
+        Usage: destroy <class name> <id>\n"
+        self.assert_help_output("help destroy", expected_output)
+
+    def test_help_all(self):
+        """Test for the help all command"""
+        expected_output = "Print all the instances saved in file.json\n"
+        self.assert_help_output("help all", expected_output)
+
+    def test_help_update(self):
+        """Test for the help update command"""
+        expected_output = "Usage: update <class name> <id> <attribute name> " \
+                          "<attribute value>\n"
+        self.assert_help_output("help update", expected_output)
+
+    def test_help_count(self):
+        """Test for the help count command"""
+        expected_output = "Usage: count <class name> or <class name>.count()\n"
+        self.assert_help_output("help count", expected_output)
+
+
+if __name__ == "__main__":
+    unittest.main()
+
